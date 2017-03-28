@@ -2,10 +2,8 @@ import heapq
 from collections import deque, namedtuple
 from random import choice
 import numpy as np
-from ghostly import Player, TileType
+from ghostly import Player, TileType, Move
 
-
-Move = namedtuple('Move', ('direction', 'x' ,'y'))
 
 class ProteusV(Player):
     
@@ -60,22 +58,22 @@ class ProteusV(Player):
         if destination:
 
             priority = distance(self.x, self.y, *destination)
-            queue = PriorityQueue((priority, Move(None, *destination)))
-            seen_tiles = {()} # HAHA VAGINA
+            queue = PriorityQueue((priority, Move(*destination, '')))
             to = {}
 
-            gscore = {}
-            gscore[destination] = 0
+            scores = {destination: 0}
+
+            BLOCKSIZE = 5
             
-            while queue:
-                current = queue.get() # fml, get == pop
+            for i in range(BLOCKSIZE):
+                current = queue.get_nowait() # fml, get == pop
                 if current.x == self.x and current.y == self.y:
                     construct_path
 
-                queue.pop(current)
-
-
-
+                for nb in self.gamemap.neighbors[destination]:
+                    score = scores[current] + self.gamemap.weightedmap[(nb.x, nb.y)]
+                    queue.put_nowait((score, nb))
+                    
 
 
 

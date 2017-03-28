@@ -1,21 +1,22 @@
 from collections import namedtuple
 from enum import Enum
 import numpy as np
- 
+
+Move = namedtuple('Move', ('x' ,'y', 'direction'))
 class MoveType(Enum):
     Up = b'UP'
     Down = b'DOWN'
     Left = b'LEFT'
     Right = b'RIGHT'
 
-Tile = namedclass('TileCOnfig', (char, weight))
+Tile = namedclass('TileConfig', ('char', 'weight'))
 class TileType(Enum):
     Pellet      = TileConfig('.', -1)
     SuperPellet = TileConfig('o', -5)
     Wall        = TileConfig('|', np.inf)
-    Floor       = TileConfig('_', 0)
-    Door        = TileConfig('-', 0)
-    Player      = TileConfig('@', 1)
+    Floor       = TileConfig('_', 1)
+    Door        = TileConfig('-', 1)
+    Player      = TileConfig('@', 3)
     BadPlayer   = TileConfig('#', 10)
     Monster     = TileConfig('<', 5)
 
@@ -38,8 +39,8 @@ class Map:
                 if tt == TileType.SuperPellet:
                     self.superpellets.append((x, y))
                 if tt != TileType.Wall:
-                    self.neighbors[x, y] = [c, m for c, m in self.get_neighboors(x, y)
-                                            if self.wrightmap[*c] != np.inf]
+                    self.neighbors[x, y] = [m for m in self.get_neighbors(x, y)
+                                            if self.weightmap[m.x, m.y] != np.inf]
                     
     def update(self, content):
         changed_rows = ((j, r) for j, r in enumerate(zip(content, self.prev)) if r[0] != r[1])
@@ -60,8 +61,8 @@ class Map:
 
     @staticmethod
     def get_neighboors(x, y):
-        return (((x, y - 1), MoveType.Up),
-                ((x, y + 1), MoveType.Down),
-                ((x - 1, y), MoveType.Left),
-                ((x + 1, y), MoveType.Right))
+        return ((Move(x, y - 1, MoveType.Up),
+                (Move(x, y + 1, MoveType.Down),
+                (Move(x - 1, y, MoveType.Left),
+                (Move(x + 1, y, MoveType.Right))
     
