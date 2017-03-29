@@ -5,29 +5,23 @@ import numpy as np
 from ghostly import Player
 
 
-class ProteusV(Player):
+class ProteusV:
     
-    def __init__(self, gamemap, **kwargs):
-        self.path = []
-        super().__init__(**kwargs)
+    def __init__(self, gamemap):
+        self.path = [None]
         self.gamemap = gamemap
-        self.gamemap.place_player(self)
-        self.last_pos = (self.x, self.y)
+        self.last_pos = None
 
     def update(self, me, others):
-        p = Player(**you)
+        p = Player(**me)
         self.x, self.y = p.x, p.y
+        print(p.x, p.y)
         self.score = p.score
         self.bad = p.bad
-        if self.point != self.last_pos:
-            self.plan.pop()
 
         self.assholes = [Player(**p) for p in others]
         for asshole in self.assholes:
             self.gamemap.place_player(asshole)
-
-    def startround(self):
-        self.think()
 
     def move(self):
         return b''
@@ -47,37 +41,47 @@ class ProteusV(Player):
         def manhattan_distance(x0, y0, x1, y1):
             return abs(x0 - x1) + abs(y0 - y1)
 
-        # Divide surrounding map into four blocks.
-        # Find blocks with at least one pellet and
-        # choose the block with least cost
+        def get_general_direction():
+
+            """
+            Divide surrounding map into four blocks, and
+            identify blocks with at least one pellet. From those,
+            choose the block with least cost. Increment blocksize
+            until at least one block contains a pellet.
+            """
         
-        bs = 5
-        best_square = None
-        best_score = np.inf
-        print(self.x, self.y)
-        while 1:
-            squares = ((max(0, self.x - bs), self.x, max(0, self.y - bs), self.y),
-                       (max(0, self.x - bs), self.x, self.y, self.y + bs),
-                       (self.x, self.x + bs, max(0, self.y - bs), self.y),
-                       (self.x, self.x + bs, self.y, self.y + bs))
+            bs = 5
+            best_square = None
+            best_score = np.inf
+            print(self.x, self.y)
+            while 1:
+                squares = ((max(0, self.x - bs), self.x, max(0, self.y - bs), self.y),
+                           (max(0, self.x - bs), self.x, self.y, self.y + bs),
+                           (self.x, self.x + bs, max(0, self.y - bs), self.y),
+                           (self.x, self.x + bs, self.y, self.y + bs))
 
             
-            for sq in squares:
-                block = self.gamemap.weightmap[sq[0]:sq[1], sq[2]:sq[3]]
-                if np.any(block < 0):
-                    # Add penalty to corners (smaller block)
-                    score = np.ma.masked_invalid(block).sum()/(1 + np.sqrt(block.size))
-                    print(score, sq)
-                    if score < best_score:
-                        best_score = score
-                        best_square = sq
+                for sq in squares:
+                    block = self.gamemap.weightmap[sq[0]:sq[1], sq[2]:sq[3]]
+                    if np.any(block < 0):
+                        # Add penalty to corners (smaller block)
+                        score = np.ma.masked_invalid(block).sum()/(1 + np.sqrt(block.size))
+                        print(score, sq)
+                        if score < best_score:
+                            best_score = score
+                            best_square = sq
 
-            if best_score != np.inf:
-                break
-            bs += 1
+                if best_score != np.inf:
+                    break
+                bs += 1
                 
-        print(best_square)
+            return best_square
 
+        def Astar_pellet(minimap):
+            
+
+
+        
         # find path to nearest pellet in chosen block
 
 
