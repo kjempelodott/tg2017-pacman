@@ -1,5 +1,3 @@
-from ghostly import Point, Tile, TileType
-
 class Player:
     def __init__(self, id, x, y, score, isdangerous):
         self.id = id

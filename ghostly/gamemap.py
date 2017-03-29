@@ -9,12 +9,12 @@ class MoveType(Enum):
     Left = b'LEFT'
     Right = b'RIGHT'
 
-Tile = namedclass('TileConfig', ('char', 'weight'))
+TileConfig = namedtuple('TileConfig', ('char', 'weight'))
 class TileType(Enum):
     Pellet      = TileConfig('.', -1)
     SuperPellet = TileConfig('o', -5)
     Wall        = TileConfig('|', np.inf)
-    Floor       = TileConfig('_', 1)
+    Floor       = TileConfig('_', 0)
     Door        = TileConfig('-', 1)
     Player      = TileConfig('@', 3)
     BadPlayer   = TileConfig('#', 10)
@@ -30,8 +30,8 @@ class Map:
         self.neighbors = np.zeros((width, height), dtype=object)
         self.superpellets = []
 
-        for x in range(self.w):
-            for y in range(self.h):
+        for x in range(0, self.w):
+            for y in range(0, self.h):
                 char = content[y][x]
                 tt = next(t for t in TileType if char == t.value.char)
                 self.weightmap[x, y] = tt.value.weight
@@ -47,7 +47,7 @@ class Map:
         for j, row in changed_rows:
             changed_tiles = ((i, j) for i, t in enumerate(zip(*row)) if t[0] != t[1])
             for i, j in changed_tiles:
-                self.weightmap[i, j] = TileType.Floor.weight
+                self.weightmap[i, j] = TileType.Floor.value.weight
                 if (i, j) in self.superpellets:
                     self.superpellets.remove((i, j))
                 
@@ -55,14 +55,18 @@ class Map:
 
     def place_player(self, player):
         if player.bad:
-            self.weightmap[player.x, player.y] = TileType.Monster.weight
+            self.weightmap[player.x, player.y] = TileType.Monster.value.weight
         else:
-            self.weightmap[player.x, player.y] = TileType.Player.weight
+            self.weightmap[player.x, player.y] = TileType.Player.value.weight
 
-    @staticmethod
-    def get_neighboors(x, y):
-        return ((Move(x, y - 1, MoveType.Up),
-                (Move(x, y + 1, MoveType.Down),
-                (Move(x - 1, y, MoveType.Left),
-                (Move(x + 1, y, MoveType.Right))
-    
+    def get_neighbors(self, x, y):
+        n = []
+        if y < self.h - 1:
+            n.append(Move(x, y + 1, MoveType.Down))
+        if x < self.w - 1:
+            n.append(Move(x + 1, y, MoveType.Right))
+        if y:
+            n.append(Move(x, y - 1, MoveType.Up))
+        if x:
+            n.append(Move(x - 1, y, MoveType.Left))
+        return n

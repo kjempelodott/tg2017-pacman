@@ -1,13 +1,14 @@
 import socket
 import json
 from ghostly import Map, Player, ProteusV
+import random
 
 RUN = False
 
 if __name__ == '__main__':
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect(('127.0.0.1', 54321))
-    s.send(b'NAME kjempelodott\n')
+    s.send(b'NAME %i\n' % random.choice(range(1000)))
     
     data = b''
 
@@ -36,7 +37,6 @@ if __name__ == '__main__':
         # Use last update only
         if RUN and msg == 'stateupdate':
             gamemap.update(js['gamestate']['map']['content'])
-            ai.update_self(**js['gamestate']['you'])
-            ai.observe(js['gamestate']['others'])
+            ai.update_self(js['gamestate']['you'], js['gamestate']['others'])
             s.send(b'%s\n' % ai.move())
             

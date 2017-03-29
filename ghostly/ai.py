@@ -2,77 +2,112 @@ import heapq
 from collections import deque, namedtuple
 from random import choice
 import numpy as np
-from ghostly import Player, TileType, Move
+from ghostly import Player
 
 
 class ProteusV(Player):
     
     def __init__(self, gamemap, **kwargs):
-        self.plan = [None]
+        self.path = []
         super().__init__(**kwargs)
         self.gamemap = gamemap
         self.gamemap.place_player(self)
-        self.last_pos = self.point
+        self.last_pos = (self.x, self.y)
 
-    def update_self(self, **kwargs):
-        p = Player(**kwargs)
+    def update(self, me, others):
+        p = Player(**you)
         self.x, self.y = p.x, p.y
         self.score = p.score
         self.bad = p.bad
         if self.point != self.last_pos:
             self.plan.pop()
 
-    def observe(self, others):
         self.assholes = [Player(**p) for p in others]
         for asshole in self.assholes:
             self.gamemap.place_player(asshole)
 
     def startround(self):
-        self.make_plan()
+        self.think()
 
     def move(self):
-        if len(self.plan) < 2:
-            self.make_plan()
+        return b''
+        if len(self.path) < 2:
+            self.think()
             
         #if not any(ass.bad for ass in self.assholes):
         self.last_pos = self.point
-        print(self.plan[-1].direction.value)
-        return self.plan[-1].direction.value
+        print(self.path[-1].direction.value)
+        return self.path[-1].direction.value
         #else:
             # check that im not moving towards any
          #   pass
             
-    def make_plan(self):
+    def think(self):
 
         def manhattan_distance(x0, y0, x1, y1):
             return abs(x0 - x1) + abs(y0 - y1)
+
+        # Divide surrounding map into four blocks.
+        # Find blocks with at least one pellet and
+        # choose the block with least cost
         
-        destination = None
-        min_dist = np.inf
-        for x, y in self.gamemap.superpellets:
-            estimate = manhattan_distance(self.x, self.y, x, y)
-            if estimate < min_dist:
-                min_dist = estimate
-                destination = (x, y)
+        bs = 5
+        best_square = None
+        best_score = np.inf
+        print(self.x, self.y)
+        while 1:
+            squares = ((max(0, self.x - bs), self.x, max(0, self.y - bs), self.y),
+                       (max(0, self.x - bs), self.x, self.y, self.y + bs),
+                       (self.x, self.x + bs, max(0, self.y - bs), self.y),
+                       (self.x, self.x + bs, self.y, self.y + bs))
 
-        if destination:
-
-            priority = distance(self.x, self.y, *destination)
-            queue = PriorityQueue((priority, Move(*destination, '')))
-            to = {}
-
-            scores = {destination: 0}
-
-            BLOCKSIZE = 5
             
-            for i in range(BLOCKSIZE):
-                current = queue.get_nowait() # fml, get == pop
-                if current.x == self.x and current.y == self.y:
-                    construct_path
+            for sq in squares:
+                block = self.gamemap.weightmap[sq[0]:sq[1], sq[2]:sq[3]]
+                if np.any(block < 0):
+                    # Add penalty to corners (smaller block)
+                    score = np.ma.masked_invalid(block).sum()/(1 + np.sqrt(block.size))
+                    print(score, sq)
+                    if score < best_score:
+                        best_score = score
+                        best_square = sq
 
-                for nb in self.gamemap.neighbors[destination]:
-                    score = scores[current] + self.gamemap.weightedmap[(nb.x, nb.y)]
-                    queue.put_nowait((score, nb))
+            if best_score != np.inf:
+                break
+            bs += 1
+                
+        print(best_square)
+
+        # find path to nearest pellet in chosen block
+
+
+        
+        # destination = None
+        # min_dist = np.inf
+        # for x, y in self.gamemap.superpellets:
+        #     estimate = manhattan_distance(self.x, self.y, x, y)
+        #     if estimate < min_dist:
+        #         min_dist = estimate
+        #         destination = (x, y)
+
+        # if destination:
+
+        #     priority = distance(self.x, self.y, *destination)
+        #     queue = PriorityQueue((priority, Move(*destination, '')))
+        #     to = {}
+
+        #     scores = {destination: 0}
+
+        #     BLOCKSIZE = 5
+            
+        #     for i in range(BLOCKSIZE):
+        #         current = queue.get_nowait() # fml, get == pop
+        #         if current.x == self.x and current.y == self.y:
+        #             construct_path
+
+        #         for nb in self.gamemap.neighbors[destination]:
+        #             score = scores[current] + self.gamemap.weightedmap[(nb.x, nb.y)]
+        #             queue.put_nowait((score, nb))
                     
 
 
@@ -131,5 +166,5 @@ class ProteusV(Player):
             #     except IndexError: # Impossible path!
             #         return b''
 
-            shortest_path = min(list(get_paths(end)), key=lambda p: len(p))
-            self.plan = shortest_path
+            # shortest_path = min(list(get_paths(end)), key=lambda p: len(p))
+            # self.plan = shortest_path
