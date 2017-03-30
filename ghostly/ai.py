@@ -1,8 +1,8 @@
-import heapq
-from collections import deque, namedtuple
+from collections import namedtuple
 from random import choice
+from queue import PriorityQueue
 import numpy as np
-from ghostly import Player
+from ghostly import Player, Move, MoveType
 
 
 class ProteusV:
@@ -24,14 +24,19 @@ class ProteusV:
             self.gamemap.place_player(asshole)
 
     def move(self):
-        return b''
-        if len(self.path) < 2:
+        if self.last_pos != (self.x, self.y):
+            # Last move succeeded
+            self.path.pop()
+            
+        if not len(self.path):
             self.think()
+
+        return self.path[-1].direction.value
             
         #if not any(ass.bad for ass in self.assholes):
-        self.last_pos = self.point
-        print(self.path[-1].direction.value)
-        return self.path[-1].direction.value
+        #self.last_pos = self.point
+        #print(self.path[-1].direction.value)
+        #return self.path[-1].direction.value
         #else:
             # check that im not moving towards any
          #   pass
@@ -62,7 +67,7 @@ class ProteusV:
 
             
                 for sq in squares:
-                    block = self.gamemap.weightmap[sq[0]:sq[1], sq[2]:sq[3]]
+                    block = self.gamemap.weight[sq[0]:sq[1], sq[2]:sq[3]]
                     if np.any(block < 0):
                         # Add penalty to corners (smaller block)
                         score = np.ma.masked_invalid(block).sum()/(1 + np.sqrt(block.size))
@@ -77,98 +82,40 @@ class ProteusV:
                 
             return best_square
 
-        def Astar_pellet(minimap):
+        def Astar_to_nearest_pellet(x0, x1, y0, y1):
+
+            MoveDist = namedtuple('MoveDist', ('move', 'dist'))
             
-
-
-        
-        # find path to nearest pellet in chosen block
-
-
-        
-        # destination = None
-        # min_dist = np.inf
-        # for x, y in self.gamemap.superpellets:
-        #     estimate = manhattan_distance(self.x, self.y, x, y)
-        #     if estimate < min_dist:
-        #         min_dist = estimate
-        #         destination = (x, y)
-
-        # if destination:
-
-        #     priority = distance(self.x, self.y, *destination)
-        #     queue = PriorityQueue((priority, Move(*destination, '')))
-        #     to = {}
-
-        #     scores = {destination: 0}
-
-        #     BLOCKSIZE = 5
+            cur = Move(self.x, self.y, MoveType.Down)
+            visited = {(cur)}
+            came_from = {}
             
-        #     for i in range(BLOCKSIZE):
-        #         current = queue.get_nowait() # fml, get == pop
-        #         if current.x == self.x and current.y == self.y:
-        #             construct_path
+            queue = PriorityQueue()
+            queue.put((0, cur))
 
-        #         for nb in self.gamemap.neighbors[destination]:
-        #             score = scores[current] + self.gamemap.weightedmap[(nb.x, nb.y)]
-        #             queue.put_nowait((score, nb))
+            while not queue.empty():
+                d, cur = queue.get()
+                if self.gamemap.weight[cur.x, cur.y] < 0: # Negative cost: pellet
+                    break
+
+                visited.add(cur)
+                d += 1
+                for nb in self.gamemap.neighbors[cur.x, cur.y]:
+                    if x0 <= nb.x <= x1 and y0 <= nb.y <= y1:
+                        if nb in visited:
+                            continue
+
+                        if nb in came_from and came_from[nb].dist < d:
+                            continue
+
+                        came_from[nb] = MoveDist(cur, d)
+                        queue.put((d, nb))
                     
+            path = [cur]
+            while path[-1] in came_from:
+                path.append(came_from[path[-1]].move)
+                
+            return path[1::-1] # Remove current position
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            
-            
-            
-            # def get_paths(*path):
-            #     moves = [Move(d, tile)
-            #              for d, tile in path[-1].tile.valid_moves.items()
-            #              if (tile not in seen_tiles and
-            #                  not tile.tiletype == TileType.Player)]
-            #     last = next((m for m in moves if m.tile == self.tile), None)
-            #     if last:
-            #         yield [*path, last]
-            #     else:
-            #         for move in moves:
-            #             seen_tiles.add(move.tile)
-            #             yield from get_paths(*path, move)
-
-            # seen_tiles = {()} # HAHA VAGINA
-            # idx = 0
-            # while 1:
-            #     try:
-            #         current = queue[idx]
-            #         c = current.counter + 1
-            #         moves = [Move(d, tile, c)
-            #                  for d, tile in current.tile.valid_moves.items()
-            #                  if tile not in seen_tiles]
-
-            #         last = next((m for m in moves if m.tile == self.tile), None)
-            #         if last:
-            #             queue.append(last)
-            #             break
-
-            #         seen_tiles.update((m.tile for m in moves))
-            #         queue.extend(moves)
-            #         idx += 1
-            #     except IndexError: # Impossible path!
-            #         return b''
-
-            # shortest_path = min(list(get_paths(end)), key=lambda p: len(p))
-            # self.plan = shortest_path
+        square = get_general_direction()
+        self.path = Astar_to_nearest_pellet(*square)
