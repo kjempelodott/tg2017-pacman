@@ -33,14 +33,15 @@ class Tile:
 
     def __init__(self, char, x, y):
         self.type = Tile.CHAR_TO_TILETYPE[char]
+        self.weight = self.type.value
         self.x, self.y = x, y
         self.valid_moves = {}
 
     def __add__(self, num):
-        return self.type.value + num
+        return self.weight + num
 
     def __radd__(self, num):
-        return self.type.value + num
+        return self.weight + num
         
     def set_valid_moves(self, grid):
 
@@ -49,16 +50,16 @@ class Tile:
         
         if y < h - 1:
             if grid[x, y+1] != TileType.Wall:
-                self.valid_moves[MoveType.Down] = (x, y+1)
+                self.valid_moves[MoveType.Down] = grid[x, y+1]
         if x < w - 1:
             if grid[x+1, y] != TileType.Wall:
-                self.valid_moves[MoveType.Right] = (x+1, y)
+                self.valid_moves[MoveType.Right] = grid[x+1, y]
         if y:
             if grid[x, y-1] != TileType.Wall:
-                self.valid_moves[MoveType.Up] = (x, y-1)
+                self.valid_moves[MoveType.Up] = grid[x, y-1]
         if x:
             if grid[x-1, y] != TileType.Wall:
-                self.valid_moves[MoveType.Left] = (x-1, y)
+                self.valid_moves[MoveType.Left] = grid[x-1, y]
 
         
 class Map:

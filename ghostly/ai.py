@@ -27,10 +27,10 @@ class ProteusV:
             # Last move succeeded
             self.path.pop()
             
-        if not len(self.path):
+        if not self.path:
             self.think()
 
-        return self.path[-1].direction.value
+        return self.path[-1].move.value
             
         #if not any(ass.bad for ass in self.assholes):
         #self.last_pos = self.point
@@ -42,6 +42,16 @@ class ProteusV:
             
     def think(self):
 
+        class PathDelta:
+            def __init__(self, tile, move, distance):
+                self.tile = tile
+                self.move = move
+                self.distance = distance
+            def __eq__(self, other):
+                return self.distance == other.distance                
+            def __lt__(self, other):
+                return self.distance < other.distance
+        
         def manhattan_distance(x0, y0, x1, y1):
             return abs(x0 - x1) + abs(y0 - y1)
 
@@ -65,7 +75,7 @@ class ProteusV:
 
                 for sq in squares:
                     block = self.gamemap.tiles[sq[0]:sq[1], sq[2]:sq[3]]
-                    if np.any(t.type.value < 0 for t in block):
+                    if np.any(t.weight < 0 for t in block):
                         # Add penalty to corners (smaller block)
                         norm = (1 + np.sqrt(block.size))
                         score = np.sum(block)/norm
@@ -81,38 +91,42 @@ class ProteusV:
 
         def Astar_to_nearest_pellet(x0, x1, y0, y1):
 
-            MoveDist = namedtuple('MoveDist', ('move', 'dist'))
-            
-            cur = Move(self.x, self.y, MoveType.Down)
-            visited = {(cur)}
+            cur = PathDelta(self.gamemap.tiles[self.x, self.y], b'', 0)
+            visited = {(cur.tile)}
             came_from = {}
             
             queue = PriorityQueue()
-            queue.put((0, cur))
+            queue.put(cur)
 
             while not queue.empty():
-                d, cur = queue.get()
-                if self.gamemap.weight[cur.x, cur.y] < 0: # Negative cost: pellet
+                cur = queue.get()
+                tile = cur.tile
+                if tile.weight < 0: # Negative cost: pellet
                     break
 
-                visited.add(cur)
-                d += 1
-                for nb in self.gamemap.neighbors[cur.x, cur.y]:
-                    if x0 <= nb.x <= x1 and y0 <= nb.y <= y1:
-                        if nb in visited:
-                            continue
+                visited.add(tile)
+                d = cur.distance + 1
+                for mv, t in tile.valid_moves.items():
+                    if not (x0 <= t.x <= x1 and y0 <= t.y <= y1):
+                        d += 1
 
-                        if nb in came_from and came_from[nb].dist < d:
-                            continue
+                    if t in visited:
+                        continue
 
-                        came_from[nb] = MoveDist(cur, d)
-                        queue.put((d, nb))
-                    
-            path = [cur]
-            while path[-1] in came_from:
-                path.append(came_from[path[-1]].move)
-                
-            return path[1::-1] # Remove current position
+                    if t in came_from and came_from[t].distance < d:
+                        continue
 
+                    pd = PathDelta(tile, mv, d)
+                    came_from[t] = pd
+                    queue.put(PathDelta(t, mv, d))
+
+            path = []
+            while cur.tile in came_from:
+                cur = came_from[cur.tile]
+                path.append(cur)
+
+            return path
+
+        print('thinking')
         square = get_general_direction()
         self.path = Astar_to_nearest_pellet(*square)
