@@ -2,7 +2,7 @@ from collections import namedtuple
 from random import choice
 from queue import PriorityQueue
 import numpy as np
-from ghostly import Player, Move, MoveType
+from ghostly import Player, MoveType
 
 
 class ProteusV:
@@ -67,10 +67,12 @@ class ProteusV:
 
             
                 for sq in squares:
-                    block = self.gamemap.weight[sq[0]:sq[1], sq[2]:sq[3]]
-                    if np.any(block < 0):
+                    block = self.gamemap.tiles[sq[0]:sq[1], sq[2]:sq[3]]
+                    if np.any(t.type.value < 0 for x in block):
                         # Add penalty to corners (smaller block)
-                        score = np.ma.masked_invalid(block).sum()/(1 + np.sqrt(block.size))
+                        _sum =  sum(t.type.value for t in block
+                                    if t.type != TileType.Wall)
+                        score = _sum/(1 + np.sqrt(block.size))
                         print(score, sq)
                         if score < best_score:
                             best_score = score
