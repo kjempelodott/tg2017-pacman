@@ -1,5 +1,6 @@
 from enum import Enum
 import numpy as np
+import numpy.ma as ma
 
 
 class TileType(Enum):
@@ -35,11 +36,14 @@ class Tile:
         self.x, self.y = x, y
         self.valid_moves = {}
 
+    def __add__(self, num):
+        return self.type.value + num
+
+    def __radd__(self, num):
+        return self.type.value + num
+        
     def set_valid_moves(self, grid):
 
-        if self.type == TileType.Wall:
-            return
-        
         w, h = grid.shape
         x, y = self.x, self.y
         
@@ -63,21 +67,22 @@ class Map:
         self.w, self.h = width, height
         self.pellets = pelletsleft
 
-        self.tiles = np.zeros((width, height), dtype=object)
+        self.tiles = ma.array(np.zeros((width, height), dtype=object))
         self.superpellets = []
 
         for x in range(self.w):
             for y in range(self.h):
                 char = content[y][x]
                 tile = Tile(char, x, y)
-                self.tiles[x, y] = tile
-                
-                if tile.type == TileType.SuperPellet:
-                    self.superpellets.append((x, y))
+                if tile.type == TileType.Wall:
+                    self.tiles[x, y] = ma.masked
+                else:
+                    self.tiles[x, y] = tile
+                    if tile.type == TileType.SuperPellet:
+                        self.superpellets.append((x, y))
 
-        for x in range(self.w):
-            for y in range(self.h):
-                self.tiles[x, y].set_valid_moves(self.tiles)
+        for t in self.tiles[~self.tiles.mask]:
+            t.set_valid_moves(self.tiles)
                 
     def update(self, content):
         changed_rows = ((j, r) for j, r in enumerate(zip(content, self.prev)) if r[0] != r[1])

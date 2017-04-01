@@ -15,7 +15,6 @@ class ProteusV:
     def update(self, me, others):
         p = Player(**me)
         self.x, self.y = p.x, p.y
-        print(p.x, p.y)
         self.score = p.score
         self.bad = p.bad
 
@@ -58,22 +57,18 @@ class ProteusV:
             bs = 5
             best_square = None
             best_score = np.inf
-            print(self.x, self.y)
             while 1:
                 squares = ((max(0, self.x - bs), self.x, max(0, self.y - bs), self.y),
                            (max(0, self.x - bs), self.x, self.y, self.y + bs),
                            (self.x, self.x + bs, max(0, self.y - bs), self.y),
                            (self.x, self.x + bs, self.y, self.y + bs))
 
-            
                 for sq in squares:
                     block = self.gamemap.tiles[sq[0]:sq[1], sq[2]:sq[3]]
-                    if np.any(t.type.value < 0 for x in block):
+                    if np.any(t.type.value < 0 for t in block):
                         # Add penalty to corners (smaller block)
-                        _sum =  sum(t.type.value for t in block
-                                    if t.type != TileType.Wall)
-                        score = _sum/(1 + np.sqrt(block.size))
-                        print(score, sq)
+                        norm = (1 + np.sqrt(block.size))
+                        score = np.sum(block)/norm
                         if score < best_score:
                             best_score = score
                             best_square = sq
