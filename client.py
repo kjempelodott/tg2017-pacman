@@ -16,8 +16,8 @@ if __name__ == '__main__':
         data += s.recv(4096)
     welcome, data = data.split(b'\n', 1)
     js = json.loads(welcome.decode())
-    gamemap = Map(**js['map'])
-    ai = ProteusV(gamemap)
+    gamemap = ai = None
+    asciimap = js['map']
     
     while 1:
         while b'\n' not in data:
@@ -31,6 +31,8 @@ if __name__ == '__main__':
             if msg in ['dead', 'endofround']:
                 RUN = False
             elif msg == 'startofround':
+                gamemap = Map(**asciimap)
+                ai = ProteusV(gamemap)
                 RUN = True
 
         # Use last update only

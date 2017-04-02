@@ -1,3 +1,4 @@
+import copy
 from enum import Enum
 import numpy as np
 import numpy.ma as ma
@@ -8,10 +9,12 @@ class TileType(Enum):
     SuperPellet = -5
     Wall        = np.inf
     Floor       = 0
-    Door        = 1
-    Player      = 3
-    BadPlayer   = 10
+    Door        = 0
+    Player      = 5
+    BadPlayer   = 20
     Monster     = 10
+    iPlayer     = -50
+    iBadPlayer  = 5
 
 
 class MoveType(Enum):
@@ -31,12 +34,21 @@ class Tile:
         '-' : TileType.Door
     }
 
-    def __init__(self, char, x, y):
-        self.type = Tile.CHAR_TO_TILETYPE[char]
-        self.weight = self.type.value
+    def __init__(self, x, y, char):
+        self._tiletype = Tile.CHAR_TO_TILETYPE[char]
+        self.weight = self._tiletype.value
         self.x, self.y = x, y
         self.valid_moves = {}
 
+    def get_type(self):
+        return self._tiletype
+        
+    def set_type(self, tt):
+        self._tiletype = tt
+        self.weight = tt.value
+        
+    tiletype = property(get_type, set_type)
+        
     def __add__(self, num):
         return self.weight + num
 
@@ -50,52 +62,61 @@ class Tile:
         
         if y < h - 1:
             if grid[x, y+1] != TileType.Wall:
-                self.valid_moves[MoveType.Down] = grid[x, y+1]
+                self.valid_moves[MoveType.Down] = (x, y+1)
         if x < w - 1:
             if grid[x+1, y] != TileType.Wall:
-                self.valid_moves[MoveType.Right] = grid[x+1, y]
+                self.valid_moves[MoveType.Right] = (x+1, y)
         if y:
             if grid[x, y-1] != TileType.Wall:
-                self.valid_moves[MoveType.Up] = grid[x, y-1]
+                self.valid_moves[MoveType.Up] = (x, y-1)
         if x:
             if grid[x-1, y] != TileType.Wall:
-                self.valid_moves[MoveType.Left] = grid[x-1, y]
+                self.valid_moves[MoveType.Left] = (x-1, y)
 
         
 class Map:
     def __init__(self, content=None, width=None, height=None, pelletsleft=0):
+        
         self.prev = content
         self.w, self.h = width, height
         self.pellets = pelletsleft
 
-        self.tiles = ma.array(np.zeros((width, height), dtype=object))
+        self.state = ma.array(np.zeros((width, height), dtype=object))
         self.superpellets = []
 
         for x in range(self.w):
             for y in range(self.h):
                 char = content[y][x]
-                tile = Tile(char, x, y)
-                if tile.type == TileType.Wall:
-                    self.tiles[x, y] = ma.masked
+                tile = Tile(x, y, char)
+                if tile.tiletype == TileType.Wall:
+                    self.state[x, y] = ma.masked
                 else:
-                    self.tiles[x, y] = tile
-                    if tile.type == TileType.SuperPellet:
+                    self.state[x, y] = tile
+                    if tile.tiletype == TileType.SuperPellet:
                         self.superpellets.append((x, y))
 
-        for t in self.tiles[~self.tiles.mask]:
-            t.set_valid_moves(self.tiles)
-                
+        for t in self.state[~self.state.mask]:
+            t.set_valid_moves(self.state)
+        
     def update(self, content):
         changed_rows = ((j, r) for j, r in enumerate(zip(content, self.prev)) if r[0] != r[1])
         for j, row in changed_rows:
-            changed_tiles = ((i, j) for i, t in enumerate(zip(*row)) if t[0] != t[1])
-            for i, j in changed_tiles:
-                self.tiles[i, j].type = TileType.Floor
+            changed_state = ((i, j) for i, t in enumerate(zip(*row)) if t[0] != t[1])
+            for i, j in changed_state:
+                self.state[i, j].tiletype = TileType.Floor
                 if (i, j) in self.superpellets:
                     self.superpellets.remove((i, j))
 
+        for tile in self.state.compressed():
+            if tile.tiletype in (TileType.Player, TileType.BadPlayer, TileType.Monster):
+                tile.tiletype = TileType.Floor
+
         self.prev = content
 
-    def place_player(self, player):
-        tt = TileType.BadPlayer if player.bad else TileType.Player
-        self.tiles[player.x, player.y].type = tt
+    def place_player(self, player, youbad):
+        tt = None
+        if youbad:
+            tt = TileType.iBadPlayer if player.bad else TileType.iPlayer
+        else:
+            tt = TileType.BadPlayer if player.bad else TileType.Player
+        self.state[player.x, player.y].tiletype = tt
