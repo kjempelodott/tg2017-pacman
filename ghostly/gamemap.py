@@ -10,11 +10,11 @@ class TileType(Enum):
     Wall        = np.inf
     Floor       = 0
     Door        = 0
-    Player      = 5
-    BadPlayer   = 20
-    Monster     = 10
-    iPlayer     = -50
-    iBadPlayer  = 5
+    Player      = 10
+    BadPlayer   = 50
+    Monster     = 20
+    iPlayer     = -20
+    iBadPlayer  = 10
 
 
 class MoveType(Enum):
@@ -82,7 +82,6 @@ class Map:
         self.pellets = pelletsleft
 
         self.state = ma.array(np.zeros((width, height), dtype=object))
-        self.superpellets = []
 
         for x in range(self.w):
             for y in range(self.h):
@@ -92,26 +91,17 @@ class Map:
                     self.state[x, y] = ma.masked
                 else:
                     self.state[x, y] = tile
-                    if tile.tiletype == TileType.SuperPellet:
-                        self.superpellets.append((x, y))
 
         for t in self.state[~self.state.mask]:
             t.set_valid_moves(self.state)
         
     def update(self, content):
-        changed_rows = ((j, r) for j, r in enumerate(zip(content, self.prev)) if r[0] != r[1])
-        for j, row in changed_rows:
-            changed_state = ((i, j) for i, t in enumerate(zip(*row)) if t[0] != t[1])
-            for i, j in changed_state:
-                self.state[i, j].tiletype = TileType.Floor
-                if (i, j) in self.superpellets:
-                    self.superpellets.remove((i, j))
-
-        for tile in self.state.compressed():
-            if tile.tiletype in (TileType.Player, TileType.BadPlayer, TileType.Monster):
-                tile.tiletype = TileType.Floor
-
-        self.prev = content
+        for x in range(self.w):
+            for y in range(self.h):
+                char = content[y][x]
+                tt = Tile.CHAR_TO_TILETYPE[char]
+                if tt != TileType.Wall:
+                    self.state[x, y].tiletype = tt
 
     def place_player(self, player, youbad):
         tt = None
