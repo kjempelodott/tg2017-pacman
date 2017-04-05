@@ -10,11 +10,11 @@ class TileType(Enum):
     Wall        = np.inf
     Floor       = 0
     Door        = 0
-    Player      = 10
-    BadPlayer   = 50
+    Player      = 1
+    BadPlayer   = 30
     Monster     = 20
     iPlayer     = -20
-    iBadPlayer  = 10
+    iBadPlayer  = 1
 
 
 class MoveType(Enum):

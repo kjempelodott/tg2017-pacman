@@ -21,7 +21,9 @@ class ProteusV:
     def __init__(self, gamemap):
         self.gamemap = gamemap
         self.path = ['dummy']
+        self.target = None
         self.x = self.y = None
+        self.first_move = True
         
     def update(self, me, others):
         p = Player(**me)
@@ -38,18 +40,15 @@ class ProteusV:
     def move(self):
 
         squares = []
-        if self.bad:
-            if any([self.manhattan_distance(a) <= 4 for a in self.assholes if a.bad]):
-                squares = self.get_general_direction()
-                squares = [k for k, v in sorted(squares.items(), key=lambda x: x[1])]
-                self.path = []
-        elif any([self.manhattan_distance(a) <= 4 for a in self.assholes]):
+        if self.first_move or \
+           any([self.manhattan_distance(a) <= 5 for a in self.assholes if a.bad]):
             squares = self.get_general_direction()
             squares = [k for k, v in sorted(squares.items(), key=lambda x: x[1])]
             self.path = []
             
         while 1:
             if self.path and self.target.weight < 0:
+                self.first_move = False
                 return self.path[-1].move.value
 
             sq = None if not squares else squares.pop()
@@ -77,10 +76,10 @@ class ProteusV:
             )                
             for sq in squares:
                 block = self.gamemap.state[sq[0]:sq[1], sq[2]:sq[3]].compressed()
-                penalty = 0
-                if not any([t.weight < 0 for t in block]):
-                    penalty += 100
-                scores[sq] = penalty + sum(block)
+                if any([t.weight > 10 for t in block]) or \
+                   not any([t.weight < 0 for t in block]):
+                    continue
+                scores[sq] = sum(block)
 
             if scores:
                 break
