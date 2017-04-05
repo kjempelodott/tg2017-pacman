@@ -49,7 +49,7 @@ class ProteusV:
         for asshole in nearby:
             print('nearby', asshole)
             badtiles.update(dp.tile for dp in Astar(asshole, self.gamemap.state, target=self))
-
+            print(badtiles)
         while 1:
             if self.path and self.target.weight < 0:
                 return self.path[-1].move.value

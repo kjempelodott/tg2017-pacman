@@ -34,7 +34,7 @@ def Astar(player, m, target=None, badtiles={()}, constraint=None):
 
         # If target specified
         if target:
-            if tile == target:
+            if tile.x == target.x and tile.y == target.y:
                 break
         # Else target is nearest pellet
         elif tile.weight < 0:
