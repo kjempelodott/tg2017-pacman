@@ -61,16 +61,16 @@ class Tile:
         x, y = self.x, self.y
         
         if y < h - 1:
-            if grid[x, y+1] != TileType.Wall:
+            if not ma.is_masked(grid[x, y+1]):
                 self.valid_moves[MoveType.Down] = (x, y+1)
         if x < w - 1:
-            if grid[x+1, y] != TileType.Wall:
+            if not ma.is_masked(grid[x+1, y]):
                 self.valid_moves[MoveType.Right] = (x+1, y)
         if y:
-            if grid[x, y-1] != TileType.Wall:
+            if not ma.is_masked(grid[x, y-1]):
                 self.valid_moves[MoveType.Up] = (x, y-1)
         if x:
-            if grid[x-1, y] != TileType.Wall:
+            if not ma.is_masked(grid[x-1, y]):
                 self.valid_moves[MoveType.Left] = (x-1, y)
 
         

@@ -3,7 +3,7 @@ from random import choice
 from queue import PriorityQueue
 import numpy as np
 from ghostly import Player, MoveType, TileType
-
+from ghostly import Astar, manhattan_distance
 
 class DeltaPath:
     def __init__(self, tile, move, distance):
@@ -20,10 +20,9 @@ class ProteusV:
     
     def __init__(self, gamemap):
         self.gamemap = gamemap
-        self.path = ['dummy']
+        self.path = [None]
         self.target = None
         self.x = self.y = None
-        self.first_move = True
         
     def update(self, me, others):
         p = Player(**me)
@@ -39,21 +38,25 @@ class ProteusV:
 
     def move(self):
 
-        squares = []
-        if self.first_move or \
-           any([self.manhattan_distance(a) <= 5 for a in self.assholes if a.bad]):
-            squares = self.get_general_direction()
-            squares = [k for k, v in sorted(squares.items(), key=lambda x: x[1])]
-            self.path = []
-            
+        # squares = []
+        # if self.target == None: # First move
+        #     get_xy(self)
+        #     squares = self.get_general_direction()
+        #     squares = [k for k, v in sorted(squares.items(), key=lambda x: x[1])]
+
+        badtiles = {()}
+        nearby = [a for a in self.assholes if a.bad and manhattan_distance(self, a) <= 5]
+        for asshole in nearby:
+            print('nearby', asshole)
+            badtiles.update(dp.tile for dp in Astar(asshole, self.gamemap.state, target=self))
+
         while 1:
             if self.path and self.target.weight < 0:
-                self.first_move = False
                 return self.path[-1].move.value
 
-            sq = None if not squares else squares.pop()
-            self.path = self.Astar_to_nearest_pellet(sq)
-
+            #sq = None if not squares else squares.pop()
+            self.path = Astar(self, self.gamemap.state, badtiles=badtiles)
+            
     def manhattan_distance(self, other):
         return abs(self.x - other.x) + abs(self.y - other.y)
         
