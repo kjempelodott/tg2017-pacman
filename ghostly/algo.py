@@ -14,15 +14,16 @@ class DeltaPath:
 def manhattan_distance(p1, p2):
     return abs(p1.x - p2.x) + abs(p1.y - p2.y)
 
-def Astar(player, m, target=None, badtiles={()}, constraint=None):
+def Astar(player, m, target=None, badtiles=None, constraint=None):
 
     x0 = x1 = y0 = y1 = None
     if constraint:
         x0, x1, y0, y1 = constraint
 
     cur = DeltaPath(m[player.x, player.y], b'', 0)
-    visited = {(cur.tile)}
-    visited.update(badtiles)
+    visited = {cur.tile}
+    if badtiles:
+        visited.update(badtiles)
     came_from = {}
 
     queue = PriorityQueue()

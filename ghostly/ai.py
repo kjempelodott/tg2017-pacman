@@ -20,22 +20,20 @@ class ProteusV:
     
     def __init__(self, gamemap):
         self.gamemap = gamemap
-        self.path = [None]
+        self.path = None
         self.target = None
+        self.panic = False
         self.x = self.y = None
         
     def update(self, me, others):
         p = Player(**me)
-        if not (self.x == p.x and self.y == p.y):
-            self.path.pop()
-            self.x, self.y = p.x, p.y
+        self.x, self.y = p.x, p.y
         self.score = p.score
-
         self.bad = p.bad
         self.assholes = [Player(**p) for p in others]
         for asshole in self.assholes:
             self.gamemap.place_player(asshole, self.bad)
-
+            
     def move(self):
 
         # squares = []
@@ -43,23 +41,39 @@ class ProteusV:
         #     get_xy(self)
         #     squares = self.get_general_direction()
         #     squares = [k for k, v in sorted(squares.items(), key=lambda x: x[1])]
-
-        badtiles = {()}
-        nearby = [a for a in self.assholes if a.bad and manhattan_distance(self, a) <= 5]
-        for asshole in nearby:
-            print('nearby', asshole)
-            badtiles.update(dp.tile for dp in Astar(asshole, self.gamemap.state, target=self))
-            print(badtiles)
-        while 1:
-            if self.path and self.target.weight < 0:
-                return self.path[-1].move.value
-
-            #sq = None if not squares else squares.pop()
-            self.path = Astar(self, self.gamemap.state, badtiles=badtiles)
-            
-    def manhattan_distance(self, other):
-        return abs(self.x - other.x) + abs(self.y - other.y)
+        avoid = set()
         
+        if self.bad:
+            self.panic = False
+        elif not self.panic:
+            nearby = [a for a in self.assholes if a.bad and manhattan_distance(self, a) <= 4]
+            if nearby:
+                self.path = None
+                self.panic = True
+                for asshole in nearby:
+                    asspath = Astar(asshole, self.gamemap.state, target=self)
+                    avoid.update([dp.tile for dp in asspath])
+        else:
+            if not any(a for a in self.assholes if a.bad and manhattan_distance(self, a) <= 8):
+                self.panic = False
+                self.path = None
+        
+        if not self.path or self.target.weight >= 0:
+             self.path = Astar(self, self.gamemap.state, badtiles=avoid)
+        try:
+            return self.path.pop().move.value
+        except:
+            return b''
+
+
+            
+
+
+
+
+
+
+
     def get_general_direction(self):
 
         bs = 6
@@ -91,55 +105,3 @@ class ProteusV:
             h += 1
 
         return scores
-
-    def Astar_to_nearest_pellet(self, square=None):
-
-        x0 = x1 = y0 = y1 = None
-        if square:
-            x0, x1, y0, y1 = square
-
-        cur = DeltaPath(self.gamemap.state[self.x, self.y], b'', 0)
-        visited = {(cur.tile)}
-        came_from = {}
-
-        queue = PriorityQueue()
-        queue.put(cur)
-
-        while not queue.empty():
-            cur = queue.get()
-            tile = cur.tile
-            # Found pellet inside best square?
-            if tile.weight < 0:
-                if not square:
-                    self.target = tile
-                    break
-                if x0 <= tile.x <= x1 and y0 <= tile.y <= y1:
-                    self.target = tile
-                    break
-
-            visited.add(tile)
-            d = cur.distance + 1
-
-            for mv, xy in tile.valid_moves.items():
-                x, y = xy
-                t = self.gamemap.state[x, y]
-
-                if t.weight > 0 and d <= 3:
-                    continue
-                
-                if t in visited:
-                    continue
-
-                if t in came_from and came_from[t].distance < d:
-                    continue
-
-                pd = DeltaPath(tile, mv, d)
-                came_from[t] = pd
-                queue.put(DeltaPath(t, mv, d))
-
-        path = []
-        while cur.tile in came_from:
-            cur = came_from[cur.tile]
-            path.append(cur)
-
-        return path

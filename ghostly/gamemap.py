@@ -54,7 +54,10 @@ class Tile:
 
     def __radd__(self, num):
         return self.weight + num
-        
+
+    def __repr__(self):
+        return '(%i, %i)' % (self.x, self.y)
+    
     def set_valid_moves(self, grid):
 
         w, h = grid.shape
