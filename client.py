@@ -11,13 +11,7 @@ if __name__ == '__main__':
     s.send(b'NAME %i\n' % random.choice(range(1000)))
     
     data = b''
-
-    while b'\n' not in data:
-        data += s.recv(4096)
-    welcome, data = data.split(b'\n', 1)
-    js = json.loads(welcome.decode())
     gamemap = ai = None
-    asciimap = js['map']
     
     while 1:
         while b'\n' not in data:
@@ -28,16 +22,26 @@ if __name__ == '__main__':
         for state in states:
             js = json.loads(state.decode())
             msg = js['messagetype']
-            if msg in ['dead', 'endofround']:
+            if msg == 'dead':
+                RUN = False
+                ai.die()
+            elif msg == 'endofround':
                 RUN = False
             elif msg == 'startofround':
-                gamemap = Map(**asciimap)
-                ai = ProteusV(gamemap)
                 RUN = True
+                gamemap = None
 
         # Use last update only
         if RUN and msg == 'stateupdate':
-            gamemap.update(js['gamestate']['map']['content'])
+            if not gamemap:
+                gamemap = Map(**js['gamestate']['map'])
+                if ai:
+                    ai.reset(gamemap)
+            else:
+                gamemap.update(js['gamestate']['map']['content'])
+            if not ai:
+                ai = ProteusV(gamemap)
+
             ai.update(js['gamestate']['you'], js['gamestate']['others'])
             s.send(b'%s\n' % ai.move())
             

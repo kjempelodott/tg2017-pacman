@@ -5,6 +5,13 @@ from ghostly import Astar, manhattan_distance
 class ProteusV:
     
     def __init__(self, gamemap):
+        self.reset(gamemap)
+        self.paranoia = 4
+
+    def die(self):
+        self.paranoia += 2
+        
+    def reset(self, gamemap):
         self.gamemap = gamemap
         self.path = None
         self.target = None
@@ -48,7 +55,7 @@ class ProteusV:
             self.panic = False
         else:
             nearby = [a for a in self.assholes
-                      if a.bad and manhattan_distance(self, a) <= 4]
+                      if a.bad and manhattan_distance(self, a) <= self.paranoia]
             if nearby:
                 self.path = None
                 self.panic = True
@@ -57,10 +64,10 @@ class ProteusV:
                     avoid.update([dp.tile for dp in asspath])
             elif self.panic:
                 if not any(a for a in self.assholes
-                           if a.bad and manhattan_distance(self, a) <= 8):
+                           if a.bad and manhattan_distance(self, a) <= self.paranoia + 4):
                     self.panic = False
                     self.path = None
-        
+
         if not self.path or self.target.weight >= 0:
              self.path = Astar(self, self.gamemap.state, badtiles=avoid, constraint=constr)
         try:
