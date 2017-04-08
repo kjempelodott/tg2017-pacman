@@ -1,4 +1,3 @@
-import copy
 from enum import Enum
 import numpy as np
 import numpy.ma as ma
