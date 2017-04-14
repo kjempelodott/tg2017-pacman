@@ -1,0 +1,6 @@
+Requires: Python3
+
+Usage: ./client.py host port
+
+Example:
+$ ./client.py localhost 54321
