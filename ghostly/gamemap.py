@@ -3,6 +3,7 @@ import numpy as np
 import numpy.ma as ma
 
 
+# TODO: Use these weights for something useful ...
 class TileType(Enum):
     Pellet      = -1
     SuperPellet = -5

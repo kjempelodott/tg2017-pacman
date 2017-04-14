@@ -1,14 +1,25 @@
+#!/usr/bin/env python3
+
+import sys
 import socket
 import json
 from ghostly import Map, Player, ProteusV
-import random
 
 RUN = False
+HOST = PORT = None
+
+try:
+    HOST = sys.argv[1]
+    PORT = int(sys.argv[2])
+except:
+    print('Usage: ./client.py host port')
+    exit()
 
 if __name__ == '__main__':
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(('127.0.0.1', 54321))
-    s.send(b'NAME %i\n' % random.choice(range(1000)))
+    s.connect((HOST, PORT))
+    s.send(b'NAME kjempelodott\n')
     
     data = b''
     gamemap = ai = None

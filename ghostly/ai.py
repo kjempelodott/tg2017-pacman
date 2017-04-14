@@ -30,12 +30,6 @@ class ProteusV:
             
     def move(self):
 
-        # squares = []
-        # if self.target == None: # First move
-        #     get_xy(self)
-        #     squares = self.get_general_direction()
-        #     squares = [k for k, v in sorted(squares.items(), key=lambda x: x[1])]
-
         avoid = set()
         constr = None
 
@@ -74,35 +68,3 @@ class ProteusV:
             return self.path.pop().move.value
         except:
             return b''
-
-     # def get_general_direction(self):
-
-     #    bs = 6
-     #    h = 3
-     #    scores = {}
-        
-     #    while bs < 20:
-     #        squares = (
-     #            (max(0, self.x-bs), self.x, max(0, self.y-bs), self.y),
-     #            (max(0, self.x-bs), self.x, max(0, self.y-h), self.y+h),
-     #            (max(0, self.x-bs), self.x, self.y, self.y+bs),
-     #            (max(0, self.x-h), self.x+h, max(0, self.y-bs), self.y),
-     #            (max(0, self.x-h), self.x+h, self.y, self.y+bs),
-     #            (self.x, self.x+bs, max(0, self.y-bs), self.y),
-     #            (self.x, self.x+bs, max(0, self.y-h), self.y+h),
-     #            (self.x, self.x+bs, self.y, self.y+bs),
-     #        )
-     #        for sq in squares:
-     #            block = self.gamemap.state[sq[0]:sq[1], sq[2]:sq[3]].compressed()
-     #            if any([t.weight > 10 for t in block]) or \
-     #               not any([t.weight < 0 for t in block]):
-     #                continue
-     #            scores[sq] = sum(block)
-
-     #        if scores:
-     #            break
-
-     #        bs += 2
-     #        h += 1
-
-     #    return scores
